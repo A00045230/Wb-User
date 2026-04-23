@@ -63,7 +63,6 @@ async function loadBooksForSelect() {
   select.innerHTML = '<option value="">Select Book</option>';
 
   if (data && data.length > 0) {
-    // Filter books with available copies > 0
     const availableBooks = data.filter(
       (book) => (book.available_copies || 0) > 0,
     );
@@ -99,7 +98,6 @@ async function addLoan(e) {
 
   const today = new Date().toISOString().split("T")[0];
 
-  // Create loan record
   const loanData = {
     book_id: parseInt(bookId),
     member_id: parseInt(memberId),
@@ -143,7 +141,6 @@ async function addLoan(e) {
     .toISOString()
     .split("T")[0];
 
-  // Reload data
   loadActiveLoans();
   loadBooksForSelect();
 }
