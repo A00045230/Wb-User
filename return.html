@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Returns - Library Loan System</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <h1 class="logo">📚 Library Loan System</h1>
+            <ul class="nav-menu">
+                <li><a href="index.html">Dashboard</a></li>
+                <li><a href="books.html">Books</a></li>
+                <li><a href="members.html">Members</a></li>
+                <li><a href="loans.html">Loans</a></li>
+                <li><a href="returns.html" class="active">Returns</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container">
+        <h2>🔄 Return Management</h2>
+        
+        <div class="table-card">
+            <h3>📋 Active Loans (Ready for Return)</h3>
+            <input type="text" id="searchReturn" placeholder="🔍 Search by member name or book title..." class="search-input">
+            <div class="table-container">
+                <table id="returnLoansTable">
+                    <thead>
+                        <tr><th>Loan ID</th><th>Member</th><th>Book Title</th><th>Loan Date</th><th>Due Date</th><th>Status</th><th>Action</th></tr>
+                    </thead>
+                    <tbody id="returnLoansBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="table-card">
+            <h3>📜 Return History</h3>
+            <div class="table-container">
+                <table id="returnHistoryTable">
+                    <thead>
+                        <tr><th>Loan ID</th><th>Member</th><th>Book</th><th>Return Date</th><th>Status</th></tr>
+                    </thead>
+                    <tbody id="returnHistoryBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/returns.js"></script>
+</body>
+</html>
