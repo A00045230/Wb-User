@@ -1,0 +1,257 @@
+// Rocky - Members Management (FULL CRUD: CREATE, READ, UPDATE, DELETE)
+
+// Get modal elements
+const modal = document.getElementById('editModal');
+const closeBtn = document.querySelector('.close');
+
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', () => {
+    loadAllMembers();
+    setupEventListeners();
+    setupModalClose();
+});
+
+function setupEventListeners() {
+    document.getElementById('addMemberForm').addEventListener('submit', addMember);
+    document.getElementById('editMemberForm').addEventListener('submit', updateMember);
+    document.getElementById('searchMember').addEventListener('input', filterMembers);
+}
+
+function setupModalClose() {
+    if (closeBtn) {
+        closeBtn.onclick = () => modal.style.display = 'none';
+    }
+    window.onclick = (event) => {
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    };
+}
+
+// ==================== CREATE ====================
+async function addMember(event) {
+    event.preventDefault();
+    
+    // Get form values
+    const memberData = {
+        name: document.getElementById('memberName').value.trim(),
+        email: document.getElementById('memberEmail').value.trim(),
+        phone: document.getElementById('memberPhone').value.trim() || null,
+        address: document.getElementById('memberAddress').value.trim() || null,
+        membership_date: new Date().toISOString().split('T')[0],
+        status: 'active'
+    };
+    
+    // Validate
+    if (!memberData.name || !memberData.email) {
+        showMessage('Name and Email are required!', true);
+        return;
+    }
+    
+    // Insert into Supabase
+    const { data, error } = await supabaseClient
+        .from('members')
+        .insert([memberData])
+        .select();
+    
+    if (error) {
+        console.error('Error:', error);
+        if (error.code === '23505') {
+            showMessage('Email already exists! Please use a different email.', true);
+        } else {
+            showMessage('Error adding member: ' + error.message, true);
+        }
+    } else {
+        showMessage('✅ Member registered successfully!');
+        document.getElementById('addMemberForm').reset();
+        loadAllMembers(); // Refresh the table
+    }
+}
+
+// ==================== READ ====================
+async function loadAllMembers() {
+    try {
+        const { data, error } = await supabaseClient
+            .from('members')
+            .select('*')
+            .order('member_id', { ascending: false });
+        
+        if (error) throw error;
+        
+        displayMembersInTable(data || []);
+    } catch (error) {
+        console.error('Error loading members:', error);
+        showMessage('Error loading members list', true);
+    }
+}
+
+function displayMembersInTable(members) {
+    const tbody = document.getElementById('membersTableBody');
+    tbody.innerHTML = '';
+    
+    if (members.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">📭 No members found. Add your first member!</td></tr>';
+        return;
+    }
+    
+    members.forEach(member => {
+        const row = tbody.insertRow();
+        const joinDate = member.membership_date ? new Date(member.membership_date).toLocaleDateString() : '-';
+        
+        row.innerHTML = `
+            <td>${member.member_id}</td>
+            <td><strong>${escapeHtml(member.name)}</strong></td>
+            <td>${escapeHtml(member.email)}</td>
+            <td>${member.phone || '-'}</td>
+            <td>${joinDate}</td>
+            <td>${getStatusBadge(member.status)}</td>
+            <td>
+                <button class="btn-warning" onclick="openEditModal(${member.member_id})">✏️ Edit</button>
+                <button class="btn-danger" onclick="deleteMember(${member.member_id})">🗑️ Delete</button>
+            </td>
+        `;
+    });
+}
+
+function getStatusBadge(status) {
+    if (status === 'active') {
+        return '<span class="status-active">🟢 Active</span>';
+    } else {
+        return '<span class="status-inactive">⚫ Inactive</span>';
+    }
+}
+
+// ==================== UPDATE ====================
+async function openEditModal(memberId) {
+    try {
+        const { data, error } = await supabaseClient
+            .from('members')
+            .select('*')
+            .eq('member_id', memberId)
+            .single();
+        
+        if (error) throw error;
+        
+        // Fill the form with member data
+        document.getElementById('editMemberId').value = data.member_id;
+        document.getElementById('editName').value = data.name;
+        document.getElementById('editEmail').value = data.email;
+        document.getElementById('editPhone').value = data.phone || '';
+        document.getElementById('editAddress').value = data.address || '';
+        document.getElementById('editStatus').value = data.status || 'active';
+        
+        // Show modal
+        modal.style.display = 'block';
+        
+    } catch (error) {
+        console.error('Error loading member:', error);
+        showMessage('Error loading member data', true);
+    }
+}
+
+async function updateMember(event) {
+    event.preventDefault();
+    
+    const memberId = document.getElementById('editMemberId').value;
+    const updates = {
+        name: document.getElementById('editName').value.trim(),
+        email: document.getElementById('editEmail').value.trim(),
+        phone: document.getElementById('editPhone').value.trim() || null,
+        address: document.getElementById('editAddress').value.trim() || null,
+        status: document.getElementById('editStatus').value
+    };
+    
+    if (!updates.name || !updates.email) {
+        showMessage('Name and Email are required!', true);
+        return;
+    }
+    
+    const { error } = await supabaseClient
+        .from('members')
+        .update(updates)
+        .eq('member_id', parseInt(memberId));
+    
+    if (error) {
+        if (error.code === '23505') {
+            showMessage('Email already exists!', true);
+        } else {
+            showMessage('Error updating member: ' + error.message, true);
+        }
+    } else {
+        showMessage('✅ Member updated successfully!');
+        modal.style.display = 'none';
+        loadAllMembers(); // Refresh table
+    }
+}
+
+// ==================== DELETE ====================
+async function deleteMember(memberId) {
+    // First check if member has active loans
+    const { data: activeLoans, error: loanCheckError } = await supabaseClient
+        .from('loans')
+        .select('loan_id')
+        .eq('member_id', memberId)
+        .is('return_date', null);
+    
+    if (loanCheckError) {
+        showMessage('Error checking member loans', true);
+        return;
+    }
+    
+    if (activeLoans && activeLoans.length > 0) {
+        showMessage(`⚠️ Cannot delete: Member has ${activeLoans.length} active loan(s). Please process returns first.`, true);
+        return;
+    }
+    
+    // Confirm deletion
+    const confirmDelete = confirm('Are you sure you want to delete this member?\n\nThis will permanently remove the member and their loan history.');
+    
+    if (confirmDelete) {
+        const { error } = await supabaseClient
+            .from('members')
+            .delete()
+            .eq('member_id', memberId);
+        
+        if (error) {
+            showMessage('Error deleting member: ' + error.message, true);
+        } else {
+            showMessage('✅ Member deleted successfully!');
+            loadAllMembers(); // Refresh table
+        }
+    }
+}
+
+// ==================== SEARCH/FILTER ====================
+function filterMembers() {
+    const searchTerm = document.getElementById('searchMember').value.toLowerCase();
+    const rows = document.querySelectorAll('#membersTableBody tr');
+    
+    rows.forEach(row => {
+        if (row.cells.length < 7) return; // Skip empty/error rows
+        
+        const name = row.cells[1]?.textContent.toLowerCase() || '';
+        const email = row.cells[2]?.textContent.toLowerCase() || '';
+        const phone = row.cells[3]?.textContent.toLowerCase() || '';
+        
+        if (name.includes(searchTerm) || email.includes(searchTerm) || phone.includes(searchTerm)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+// ==================== HELPER FUNCTIONS ====================
+function escapeHtml(str) {
+    if (!str) return '';
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+// Make functions global so buttons can call them
+window.openEditModal = openEditModal;
+window.deleteMember = deleteMember;
