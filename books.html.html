@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Books - Library Loan System</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <h1 class="logo">📚 Library Loan System</h1>
+            <ul class="nav-menu">
+                <li><a href="index.html">Dashboard</a></li>
+                <li><a href="books.html" class="active">Books</a></li>
+                <li><a href="members.html">Members</a></li>
+                <li><a href="loans.html">Loans</a></li>
+                <li><a href="returns.html">Returns</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container">
+        <h2>📖 Book Management</h2>
+        
+        <!-- CREATE Form -->
+        <div class="form-card">
+            <h3>➕ Add New Book</h3>
+            <form id="addBookForm">
+                <div class="form-group">
+                    <label>Title *</label>
+                    <input type="text" id="bookTitle" required>
+                </div>
+                <div class="form-group">
+                    <label>Author *</label>
+                    <input type="text" id="bookAuthor" required>
+                </div>
+                <div class="form-group">
+                    <label>ISBN</label>
+                    <input type="text" id="bookISBN">
+                </div>
+                <div class="form-group">
+                    <label>Genre</label>
+                    <select id="bookGenre">
+                        <option value="Fiction">Fiction</option>
+                        <option value="Non-Fiction">Non-Fiction</option>
+                        <option value="Science">Science</option>
+                        <option value="Technology">Technology</option>
+                        <option value="History">History</option>
+                        <option value="Fantasy">Fantasy</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Published Year</label>
+                    <input type="number" id="bookYear" value="2024">
+                </div>
+                <div class="form-group">
+                    <label>Total Copies</label>
+                    <input type="number" id="bookCopies" value="1" min="1">
+                </div>
+                <button type="submit" class="btn-primary">Add Book</button>
+            </form>
+        </div>
+
+        <!-- READ Table with DELETE -->
+        <div class="table-card">
+            <h3>📚 Book Inventory</h3>
+            <input type="text" id="searchBooks" placeholder="🔍 Search by title, author, or ISBN..." class="search-input">
+            <div class="table-container">
+                <table id="booksTable">
+                    <thead>
+                        <tr><th>ID</th><th>Title</th><th>Author</th><th>ISBN</th><th>Genre</th><th>Year</th><th>Copies</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody id="booksTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/books.js"></script>
+</body>
+</html>
